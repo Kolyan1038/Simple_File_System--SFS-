@@ -1,55 +1,63 @@
 #!/bin/bash
 
-# Clear the console
+# Используем абсолютный путь или $HOME вместо ~
+MOUNT_DIR="$HOME/sfs_mount"
+
+# Проверка существования точки монтирования
+if [ ! -d "$MOUNT_DIR" ]; then
+    echo "Ошибка: директория монтирования $MOUNT_DIR не существует!"
+    echo "Создаю директорию..."
+    mkdir -p "$MOUNT_DIR" || {
+        echo "Не удалось создать $MOUNT_DIR"
+        exit 1
+    }
+fi
+
 clear
+echo "=== Начало тестирования SFS в $MOUNT_DIR ==="
 
-# Change to the mnt directory
-echo "Changing to the mnt directory..."
-cd /home/alexander/mnt
+# Функция для проверки выполнения команд
+run_test() {
+    echo -e "\n$1"
+    if eval "$2"; then
+        echo "[OK]"
+    else
+        echo "[ОШИБКА] Команда не выполнена: $2"
+        exit 1
+    fi
+}
 
-# Create the testFile.txt file
-echo "Creating the testFile.txt file..."
-touch testFile.txt
+# Тест 1: Создание файла
+run_test "1. Создание testFile.txt" "touch \"$MOUNT_DIR/testFile.txt\""
 
-# Reading directory
-echo "Reading directory..."
-dir
+# Тест 2: Чтение директории
+run_test "2. Содержимое директории:" "ls -la \"$MOUNT_DIR\""
 
-# Write "Test" to the testFile.txt file
-echo "Writing 'Test' to the testFile.txt file..."
-echo "Test" >> testFile.txt
+# Тест 3: Запись в файл
+run_test "3. Запись 'Test' в файл" "echo "Test" >> \"$MOUNT_DIR/testFile.txt\""
 
-# Display the contents of the testFile.txt file
-echo "Contents of the testFile.txt file:"
-cat testFile.txt
+# Тест 4: Чтение файла
+run_test "4. Содержимое файла:" "cat \"$MOUNT_DIR/testFile.txt\""
 
-# Create the test directory
-echo "Creating the test directory..."
-mkdir testDir
+# Тест 5: Создание директории
+run_test "5. Создание testDir" "mkdir \"$MOUNT_DIR/testDir\""
 
-# Change to the qwe directory
-echo "Moving testFile.txt to the test directory..."
-mv testFile.txt testDir
+# Тест 6: Перемещение файла
+run_test "6. Перемещение testFile.txt в testDir" "mv \"$MOUNT_DIR/testFile.txt\" \"$MOUNT_DIR/testDir/\""
 
-# Change to the testDir directory
-echo "Changing to the testDir directory..."
-cd testDir
+# Тест 7: Чтение файла в поддиректории
+run_test "7. Содержимое перемещенного файла:" "cat \"$MOUNT_DIR/testDir/testFile.txt\""
 
-# Display the contents of the testFile.txt file
-echo "Contents of the testFile.txt file:"
-cat testFile.txt
+# Тест 8: Переименование файла
+run_test "8. Переименование в testFile2.txt" "mv \"$MOUNT_DIR/testDir/testFile.txt\" \"$MOUNT_DIR/testDir/testFile2.txt\""
 
-# Change to the qwe directory
-echo "Renaming testFile.txt to testFile2.txt ..."
-mv testFile.txt testFile2.txt
+# Тест 9: Дозапись в файл
+run_test "9. Добавление строки в файл" "echo \"New line\" >> \"$MOUNT_DIR/testDir/testFile2.txt\""
 
-# Write "Test" to the testFile.txt file
-echo "Writing 'Test' to the testFile2.txt file..."
-echo "Test" >> testFile2.txt
+# Тест 10: Финальное содержимое
+run_test "10. Итоговое содержимое файла:" "cat \"$MOUNT_DIR/testDir/testFile2.txt\""
 
-# Open the testFile2.txt file
-echo "Opening the testFile2.txt file..."
-open testFile2.txt
+# Тест 11: Содержимое директории
+run_test "11. Финальное состояние директории:" "tree \"$MOUNT_DIR\""
 
-# Display a script completion message
-echo "Script completed"
+echo -e "\n=== Все тесты успешно завершены ==="
